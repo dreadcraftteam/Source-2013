@@ -127,6 +127,10 @@ extern ConVar *sv_maxreplay;
 
 extern CServerGameDLL g_ServerGameDLL;
 
+ConVar sv_regeneration("sv_regeneration", "1", FCVAR_REPLICATED);
+ConVar sv_regeneration_wait_time("sv_regeneration_wait_time", "1.0", FCVAR_REPLICATED);
+ConVar sv_regeneration_rate("sv_regeneration_rate", "0.5", FCVAR_REPLICATED);
+
 // TIME BASED DAMAGE AMOUNT
 // tweak these values based on gameplay feedback:
 #define PARALYZE_DURATION	2		// number of 2 second intervals to take damage
@@ -161,6 +165,8 @@ extern CServerGameDLL g_ServerGameDLL;
 
 extern bool		g_fDrawLines;
 int				gEvilImpulse101;
+
+float			m_fRegenRemander;
 
 bool gInitHUD = true;
 
@@ -334,6 +340,8 @@ BEGIN_DATADESC( CBasePlayer )
 	DEFINE_FIELD( m_tbdPrev, FIELD_TIME ),
 	DEFINE_FIELD( m_flStepSoundTime, FIELD_FLOAT ),
 	DEFINE_ARRAY( m_szNetname, FIELD_CHARACTER, MAX_PLAYER_NAME_LENGTH ),
+
+	DEFINE_FIELD(m_fTimeLastHurt, FIELD_TIME),
 
 	//DEFINE_FIELD( m_flgeigerRange, FIELD_FLOAT ),	// Don't restore, reset in Precache()
 	//DEFINE_FIELD( m_flgeigerDelay, FIELD_FLOAT ),	// Don't restore, reset in Precache()
@@ -652,6 +660,8 @@ CBasePlayer::CBasePlayer( )
 	m_nMovementTicksForUserCmdProcessingRemaining = 0;
 
 	m_flLastObjectiveTime = -1.f;
+
+	m_fRegenRemander = 0;
 }
 
 CBasePlayer::~CBasePlayer( )
@@ -1365,6 +1375,11 @@ int CBasePlayer::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 		{
 			bitsDamage &= ~DMG_SHOCK;
 			ffound = true;
+		}
+
+		if (GetHealth() < 100)
+		{
+			m_fTimeLastHurt = gpGlobals->curtime;
 		}
 	}
 
@@ -4756,6 +4771,27 @@ void CBasePlayer::PostThink()
 	SimulatePlayerSimulatedEntities();
 #endif
 
+	if (IsAlive() && GetHealth() < GetMaxHealth() && (sv_regeneration.GetInt() == 1))
+	{
+		// Color to overlay on the screen while the player is taking damage
+		color32 hurtScreenOverlay = { 255, 255, 255, 0 };
+
+		if (gpGlobals->curtime > m_fTimeLastHurt + sv_regeneration_wait_time.GetFloat())
+		{
+			//Regenerate based on rate, and scale it by the frametime
+			m_fRegenRemander += sv_regeneration_rate.GetFloat() * gpGlobals->frametime;
+
+			if (m_fRegenRemander >= 1)
+			{
+				TakeHealth(m_fRegenRemander, DMG_GENERIC);
+				m_fRegenRemander = 0;
+			}
+		}
+		else
+		{
+			UTIL_ScreenFade(this, hurtScreenOverlay, 1.0f, 0.1f, FFADE_IN | FFADE_PURGE);
+		}
+	}
 }
 
 // handles touching physics objects

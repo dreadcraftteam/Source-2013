@@ -858,6 +858,8 @@ public:
 	CNetworkVarEmbedded( CAttributeList,	m_AttributeList );
 #endif
 
+	float			m_fTimeLastHurt;
+
 	void InitFogController( void );
 	void InputSetFogController( inputdata_t &inputdata );
 
