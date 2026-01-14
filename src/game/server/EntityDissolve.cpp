@@ -25,11 +25,11 @@ static const char *s_pElectroThinkContext = "ElectroThinkContext";
 // Lifetime 
 //-----------------------------------------------------------------------------
 #define DISSOLVE_FADE_IN_START_TIME			0.0f
-#define DISSOLVE_FADE_IN_END_TIME			1.0f
-#define DISSOLVE_FADE_OUT_MODEL_START_TIME	1.9f
-#define DISSOLVE_FADE_OUT_MODEL_END_TIME	2.0f
-#define DISSOLVE_FADE_OUT_START_TIME		2.0f
-#define DISSOLVE_FADE_OUT_END_TIME			2.0f
+#define DISSOLVE_FADE_IN_END_TIME			0.2f
+#define DISSOLVE_FADE_OUT_MODEL_START_TIME	0.1f
+#define DISSOLVE_FADE_OUT_MODEL_END_TIME	0.2f
+#define DISSOLVE_FADE_OUT_START_TIME		0.2f
+#define DISSOLVE_FADE_OUT_END_TIME			0.2f
 
 //-----------------------------------------------------------------------------
 // Model 

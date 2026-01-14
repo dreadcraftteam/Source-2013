@@ -244,6 +244,8 @@ void CHL2MP_Player::GiveDefaultItems( void )
 	GiveNamedItem("weapon_pistol");
 	GiveNamedItem("weapon_shotgun");
 	GiveNamedItem("weapon_frag");
+
+	GiveNamedItem("weapon_devtool");
 }
 
 void CHL2MP_Player::PickDefaultSpawnTeam( void )

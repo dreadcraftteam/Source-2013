@@ -34,6 +34,11 @@ $Project "Client (HL2MP)"
 		$File	"$SRCDIR\game\shared\predicted_viewmodel.h"
 		$File	"$SRCDIR\game\shared\teamplay_round_timer.cpp"
 		$File	"$SRCDIR\game\shared\teamplay_round_timer.h"
+		
+		$Folder "By DREADCRAFT"
+		{
+			$File	"$SRCDIR\game\shared\dreadcraftre\weapon_devtool.cpp"
+		}
 
 		$Folder	"NextBot"
 		{

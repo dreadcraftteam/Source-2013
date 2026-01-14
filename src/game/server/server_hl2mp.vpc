@@ -60,6 +60,11 @@ $Project "Server (HL2MP)"
 		$File	"trigger_area_capture.h"
 		$File   "$SRCDIR\game\shared\teamplay_round_timer.cpp"
 		$File   "$SRCDIR\game\shared\teamplay_round_timer.h"
+		
+		$Folder "By DREADCRAFT"
+		{
+			$File	"$SRCDIR\game\shared\dreadcraftre\weapon_devtool.cpp"
+		}
 
 		$Folder "NextBot"
 		{
