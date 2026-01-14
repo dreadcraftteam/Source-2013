@@ -128,8 +128,8 @@ extern ConVar *sv_maxreplay;
 extern CServerGameDLL g_ServerGameDLL;
 
 ConVar sv_regeneration("sv_regeneration", "1", FCVAR_REPLICATED);
-ConVar sv_regeneration_wait_time("sv_regeneration_wait_time", "1.0", FCVAR_REPLICATED);
-ConVar sv_regeneration_rate("sv_regeneration_rate", "0.5", FCVAR_REPLICATED);
+ConVar sv_regeneration_wait_time("sv_regeneration_wait_time", "3.5", FCVAR_REPLICATED);
+ConVar sv_regeneration_rate("sv_regeneration_rate", "10.5", FCVAR_REPLICATED);
 
 // TIME BASED DAMAGE AMOUNT
 // tweak these values based on gameplay feedback:
