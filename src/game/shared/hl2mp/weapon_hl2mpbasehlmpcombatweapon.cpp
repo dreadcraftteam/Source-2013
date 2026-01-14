@@ -220,10 +220,13 @@ void CBaseHL2MPCombatWeapon::WeaponIdle( void )
 
 #if defined( CLIENT_DLL )
 
-#define	HL2_BOB_CYCLE_MIN	1.0f
-#define	HL2_BOB_CYCLE_MAX	0.45f
-#define	HL2_BOB			0.002f
-#define	HL2_BOB_UP		0.5f
+#define	HL2_BOB_CYCLE_MIN		1.0f
+#define	HL2_BOB_CYCLE_MAX		0.45f
+#define	HL2_BOB					0.002f
+#define	HL2_BOB_UP				0.5f
+
+#define BOB_QUAKE				0.01f
+#define BOB_MAX_CYCLE_QUAKE		0.9f
 
 extern float	g_lateralBob;
 extern float	g_verticalBob;
@@ -244,73 +247,80 @@ static ConVar	v_ipitch_level( "v_ipitch_level", "0.3", FCVAR_REPLICATED | FCVAR_
 // Purpose: 
 // Output : float
 //-----------------------------------------------------------------------------
-float CBaseHL2MPCombatWeapon::CalcViewmodelBob( void )
+float CBaseHL2MPCombatWeapon::CalcViewmodelBob(void)
 {
 	static	float bobtime;
 	static	float lastbobtime;
 	float	cycle;
-	
-	CBasePlayer *player = ToBasePlayer( GetOwner() );
-	//Assert( player );
 
-	//NOTENOTE: For now, let this cycle continue when in the air, because it snaps badly without it
+	CBasePlayer* player = ToBasePlayer(GetOwner());
 
-	if ( ( !gpGlobals->frametime ) || ( player == NULL ) )
+	if ((!gpGlobals->frametime) || (player == NULL))
 	{
-		//NOTENOTE: We don't use this return value in our case (need to restructure the calculation function setup!)
-		return 0.0f;// just use old value
+		return 0.0f;
 	}
+
+	if (player->GetMoveType() == MOVETYPE_NOCLIP)
+	{
+		return 0.0f;
+	}
+
+	Vector vel;
+
+	lastbobtime = gpGlobals->curtime;
+	bobtime += gpGlobals->frametime;
+
+	cycle = bobtime - (int)(bobtime / BOB_MAX_CYCLE_QUAKE) * BOB_MAX_CYCLE_QUAKE;
+	cycle /= BOB_MAX_CYCLE_QUAKE;
+
+	if (cycle < HL2_BOB_UP)
+	{
+		cycle = M_PI * cycle / HL2_BOB_UP;
+	}
+	else
+	{
+		cycle = M_PI + M_PI * (cycle - HL2_BOB_UP) / (1.0 - HL2_BOB_UP);
+	}
+
+	VectorCopy(player->GetLocalVelocity(), vel);
+	vel[2] = 0;
+
+	g_lateralBob = sqrt(vel[0] * vel[0] + vel[1] * vel[1]) * BOB_QUAKE;
+	g_lateralBob = g_lateralBob * 0.3 + g_lateralBob * 0.7 * sin(cycle);
+
+	g_lateralBob = clamp(g_lateralBob, -6.5f, 4.0f);
 
 	//Find the speed of the player
 	float speed = player->GetLocalVelocity().Length2D();
 
-	//FIXME: This maximum speed value must come from the server.
-	//		 MaxSpeed() is not sufficient for dealing with sprinting - jdw
+	speed = clamp(speed, -250, 250);
 
-	speed = clamp( speed, -320, 320 );
+	float bob_offset = RemapVal(speed, 0, 250, 0.0f, 1.0f);
 
-	float bob_offset = RemapVal( speed, 0, 320, 0.0f, 1.0f );
-	
-	bobtime += ( gpGlobals->curtime - lastbobtime ) * bob_offset;
+	bobtime += (gpGlobals->curtime - lastbobtime) * bob_offset;
 	lastbobtime = gpGlobals->curtime;
 
-	//Calculate the vertical bob
-	cycle = bobtime - (int)(bobtime/HL2_BOB_CYCLE_MAX)*HL2_BOB_CYCLE_MAX;
+	// Calculate the vertical bob
+	cycle = bobtime - (int)(bobtime / HL2_BOB_CYCLE_MAX) * HL2_BOB_CYCLE_MAX;
 	cycle /= HL2_BOB_CYCLE_MAX;
 
-	if ( cycle < HL2_BOB_UP )
+	if (cycle < HL2_BOB_UP)
 	{
 		cycle = M_PI * cycle / HL2_BOB_UP;
 	}
 	else
 	{
-		cycle = M_PI + M_PI*(cycle-HL2_BOB_UP)/(1.0 - HL2_BOB_UP);
-	}
-	
-	g_verticalBob = speed*0.005f;
-	g_verticalBob = g_verticalBob*0.3 + g_verticalBob*0.7*sin(cycle);
-
-	g_verticalBob = clamp( g_verticalBob, -7.0f, 4.0f );
-
-	//Calculate the lateral bob
-	cycle = bobtime - (int)(bobtime/HL2_BOB_CYCLE_MAX*2)*HL2_BOB_CYCLE_MAX*2;
-	cycle /= HL2_BOB_CYCLE_MAX*2;
-
-	if ( cycle < HL2_BOB_UP )
-	{
-		cycle = M_PI * cycle / HL2_BOB_UP;
-	}
-	else
-	{
-		cycle = M_PI + M_PI*(cycle-HL2_BOB_UP)/(1.0 - HL2_BOB_UP);
+		cycle = M_PI + M_PI * (cycle - HL2_BOB_UP) / (1.0 - HL2_BOB_UP);
 	}
 
-	g_lateralBob = speed*0.005f;
-	g_lateralBob = g_lateralBob*0.3 + g_lateralBob*0.7*sin(cycle);
-	g_lateralBob = clamp( g_lateralBob, -7.0f, 4.0f );
-	
+	g_verticalBob = speed * 0.009f;
+	g_verticalBob = g_verticalBob * 0.3 + g_verticalBob * 0.7 * sin(cycle);
+
+	g_verticalBob = clamp(g_verticalBob, -7.0f, 4.0f);
+
 	//NOTENOTE: We don't use this return value in our case (need to restructure the calculation function setup!)
 	return 0.0f;
+
 }
 
 //-----------------------------------------------------------------------------
@@ -319,26 +329,27 @@ float CBaseHL2MPCombatWeapon::CalcViewmodelBob( void )
 //			&angles - 
 //			viewmodelindex - 
 //-----------------------------------------------------------------------------
-void CBaseHL2MPCombatWeapon::AddViewmodelBob( CBaseViewModel *viewmodel, Vector &origin, QAngle &angles )
+void CBaseHL2MPCombatWeapon::AddViewmodelBob(CBaseViewModel* viewmodel, Vector& origin, QAngle& angles)
 {
 	Vector	forward, right;
-	AngleVectors( angles, &forward, &right, NULL );
+	AngleVectors(angles, &forward, &right, NULL);
 
 	CalcViewmodelBob();
 
-	// Apply bob, but scaled down to 40%
-	VectorMA( origin, g_verticalBob * 0.1f, forward, origin );
-	
 	// Z bob a bit more
-	origin[2] += g_verticalBob * 0.1f;
-	
+	origin[2] += (g_lateralBob * 0.1f);
+
+	for (int i = 0; i < 3; i++)
+	{
+		origin[i] += g_lateralBob * 0.4 * forward[i];
+	}
+
 	// bob the angles
-	angles[ ROLL ]	+= g_verticalBob * 0.5f;
-	angles[ PITCH ]	-= g_verticalBob * 0.4f;
+	angles[YAW] -= g_lateralBob * 0.5;
+	angles[ROLL] -= g_lateralBob * 1;
+	angles[PITCH] -= g_lateralBob * 0.3;
 
-	angles[ YAW ]	-= g_lateralBob  * 0.3f;
-
-	VectorMA( origin, g_lateralBob * 0.8f, right, origin );
+	return;
 }
 
 //-----------------------------------------------------------------------------
